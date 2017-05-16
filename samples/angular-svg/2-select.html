@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <body ng-app="app" ng-controller="ctrl">
+    <svg width="960" height="240" viewBox="0 -115 960 240">
+      <g ng-repeat="planet in planets" ng-attr-transform="translate({{planet.x}},0)" ng-click="$parent.selectedPlanet = planet" ng-class="{ selected: selectedPlanet == planet }">
+        <circle ng-attr-r="{{planet.radius*10}}" ng-attr-fill="{{planet.color}}"></circle>
+        <text ng-attr-transform="translate(0,{{planet.radius*10+5}})">{{planet.name}}</text>
+      </g>
+    </svg>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script>
+angular.module("app", []).controller("ctrl", function($scope){
+  $scope.planets = [
+    { name: "Mercury", radius: 0.3825, numberOfMoons: 0, x: 50, color: "#eeffff" },
+    { name: "Venus", radius: 0.9488, numberOfMoons: 0, x: 100, color: "#f0dc82" },
+    { name: "Earth", radius: 1, numberOfMoons: 1, x: 150, color: "#b0e0e6" },
+    { name: "Mars", radius: 0.53260, numberOfMoons: 2, x: 200, color: "#ffa6c9" },
+    { name: "Jupiter", radius: 11.209, numberOfMoons: 67, x: 350, color: "#fbec5d" },
+    { name: "Saturn", radius: 9.449, numberOfMoons: 62, x: 600, color: "#7fffd4" },
+    { name: "Uranus", radius: 4.007, numberOfMoons: 27, x: 775, color: "#f0ffff" },
+    { name: "Neptune", radius: 3.883, numberOfMoons: 14, x: 900, color: "#ccccff" }
+  ];
+});
+    </script>
+    <style>
+svg {
+  background-color: #000;
+}
+g {
+  cursor: pointer;
+}
+text {
+  font-family: Arial;
+  font-size: 11px;
+  text-anchor: middle;
+  alignment-baseline: hanging;
+  fill: #fff;
+}
+.selected > circle {
+  stroke: #f00;
+  stroke-width: 3px;
+}
+.selected > text {
+  fill: #f00;
+}
+    </style>
+  </body>
+</html>

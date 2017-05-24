@@ -3,6 +3,7 @@
     <head>
       <title>visualize simply</title>
       <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
       <link rel="stylesheet" type="text/css" href="/assets/main.css">
     </head>
     <body>
@@ -24,7 +25,7 @@
         <div class="wrapper"><article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">Manipulate SVG elements with Angular.js</h1>
+    <h1 class="post-title" itemprop="name headline">Manipulate SVG elements with Angular.js (I)</h1>
     <p class="post-meta">
       <time datetime="2017-04-29T16:00:00-04:00" itemprop="datePublished">
         
@@ -34,41 +35,39 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <p>When it comes to creating visualizations on a web UI, the first JavaScript library we usually think of is <a href="https://d3js.org/">d3.js</a>. d3.js is very powerful as it handles the logic to consume data, arrange and manipulate graphics (usually created as SVG elements). Nonetheless, in many cases we may be a mix-and-match approach, by which we can take advantage of multiple libraries. In the past two years, my organization has been developing a business intelligence platform based on d3.js and <a href="https://angularjs.org/">Angular.js</a>. While building this product, I constantly ask myself a question: what is the best way to integrate d3.js and Angular.js in one web application?</p>
+    <p>When it comes to creating visualizations on a web UI, the first JavaScript library we usually think of is <a href="https://d3js.org/">d3.js</a>. d3.js is very powerful as it handles the logic to consume data, arrange and manipulate graphics (usually created as SVG elements). Nonetheless, in the case where multiple libraries are used in one application, we may need a mix-and-match approach. In the past two years, my organization has been developing a business intelligence platform based on d3.js and <a href="https://angularjs.org/">Angular.js</a>. While building this product, I constantly ask myself a question: what is the best way to integrate d3.js and Angular.js in one web application?</p>
 
 <p>This is a topic that quite a few people have discussed. In my exploration of the past two years, I have seen various approaches being suggested in articles. Overall these approaches can be divided into two categories:</p>
 
 <p><strong>1. Create a directive, and wrap d3 code in it as an independent UI component.</strong> This approach is frequently suggested because for Angular developers, directive is the place to go to if any DOM elements need to be modified.</p>
 
-<p><strong>2. Let Angular drive SVG elements directly, and introduce d3 as needed.</strong> This approach is likely to eliminate most of your d3 code that deal with SVG creation, and bring many SVG attributes from JavaScript to HTML. This is an approach I often find helpful when there are many nested and repeated SVG elements, and when there are many mouse events to be handled.</p>
+<p><strong>2. Let Angular drive SVG elements directly, and introduce d3 as needed.</strong> This approach is likely to eliminate most of your d3 code that deal with SVG creation, and bring many SVG attributes from JavaScript to HTML. It’s an approach I often find helpful when there are many nested and repeated SVG elements, and when there are many mouse events to be handled.</p>
 
-<p>In this article, I would emphasize on the second category, and show how you can create and manipulate SVG elements without d3.js. While there are already some very good articles available (such as <a href="http://alexandros.resin.io/angular-d3-svg/">one Alexandros Marinos at Resin.io published</a>), I would like to dig deeper into how to maximize the benefit of event-handling directives such as ng-click, ng-mouseenter, ng-mouseleave, etc.</p>
+<p>In this article, I would emphasize on the second category, and show how you can create and manipulate SVG elements without d3.js. While there are already some very good articles available (such as <a href="http://alexandros.resin.io/angular-d3-svg/">one Alexandros Marinos at Resin.io published</a>), I would like to dig deeper into how to maximize the benefit of Angular’s event-handling directives such as <strong>ng-click</strong>, <strong>ng-mouseenter</strong>, <strong>ng-mouseleave</strong>, etc.</p>
 
 <h2 id="create-svg-elements-in-the-angular-way">Create SVG elements in the Angular way</h2>
 
-<p>Let’s start an array of objects. It’s a list of the eight planets in solar system (yes, now there is only eight, not nine, officially).</p>
+<p>Let’s start with an array of objects. It’s a list of the eight planets in solar system (yes, now officially there are only eight, not nine). This array should be bound with the main controller <code class="highlighter-rouge">ctrl</code> in an Angular application called <code class="highlighter-rouge">app</code>. If you are not familiar with the concept of controller in Angular, you may find <a href="https://docs.angularjs.org/guide/controller">Angular’s official doc on controller</a> helpful.</p>
 
 <div class="language-javascript highlighter-rouge"><pre class="highlight"><code><span class="nx">angular</span><span class="p">.</span><span class="nx">module</span><span class="p">(</span><span class="s2">"app"</span><span class="p">,</span> <span class="p">[]).</span><span class="nx">controller</span><span class="p">(</span><span class="s2">"ctrl"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$scope</span><span class="p">){</span>
   <span class="nx">$scope</span><span class="p">.</span><span class="nx">planets</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Mercury"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.3825</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#eeffff"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Venus"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.9488</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#f0dc82"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Earth"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#b0e0e6"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Mars"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.53260</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#ffa6c9"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Jupiter"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">11.209</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">67</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">350</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#fbec5d"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Saturn"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">9.449</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">62</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#7fffd4"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Uranus"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">4.007</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">775</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#f0ffff"</span> <span class="p">},</span>
-    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Neptune"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">3.883</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"#ccccff"</span> <span class="p">}</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Mercury"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.3825</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"gray"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Venus"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.9488</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"gold"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Earth"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"royalblue"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Mars"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">0.53260</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"crimson"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Jupiter"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">11.209</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">67</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">350</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"darkorange"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Saturn"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">9.449</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">62</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"palegoldenrod"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Uranus"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">4.007</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">775</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"dodgerblue"</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="na">name</span><span class="p">:</span> <span class="s2">"Neptune"</span><span class="p">,</span> <span class="na">radius</span><span class="p">:</span> <span class="mf">3.883</span><span class="p">,</span> <span class="na">numberOfMoons</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span> <span class="na">x</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span> <span class="na">color</span><span class="p">:</span> <span class="s2">"lightsteelblue"</span> <span class="p">}</span>
   <span class="p">];</span>
 <span class="p">});</span>
 </code></pre>
 </div>
 
-<p>Since the array <code class="highlighter-rouge">planet</code> is already bound with the controller’s scope, we can access it in the template. Now, let’s start rendering the planets in the Angular way. In the code snippet below, you can see two things that you don’t see in a normal SVG documents: <code class="highlighter-rouge">ng-repeat</code> and <code class="highlighter-rouge">ng-attr-*</code>.</p>
+<p>Since the array <code class="highlighter-rouge">planets</code> is already bound with the controller’s scope, we can access it in the template. Now, let’s start rendering the planets in the Angular way. In the code snippet below, you can see two things that you don’t see in a normal SVG documents: <code class="highlighter-rouge">ng-repeat</code> and <code class="highlighter-rouge">ng-attr-*</code>.</p>
 
-<p><code class="highlighter-rouge">ng-repeat</code> allows to to iterate through an array. <code class="highlighter-rouge">ng-attr-*</code> simply provides access to control the attributes on an SVG element. For example, where you usually specify <code class="highlighter-rouge">transform="translate(...)"</code> now becomes <code class="highlighter-rouge">ng-attr-transform(...)</code>. This makes it possible for us to use variables in SVG elements.</p>
-
-<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="nt">&lt;svg</span> <span class="na">width=</span><span class="s">"960"</span> <span class="na">height=</span><span class="s">"240"</span> <span class="na">viewBox=</span><span class="s">"0 -115 960 240"</span><span class="nt">&gt;</span>
-  <span class="nt">&lt;g</span> <span class="na">ng-repeat=</span><span class="s">"planet in planets"</span> <span class="na">ng-attr-transform=</span><span class="s">"translate({{planet.x}},0)"</span><span class="nt">&gt;</span>
+<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="nt">&lt;svg</span> <span class="na">width=</span><span class="s">"960"</span> <span class="na">height=</span><span class="s">"360"</span> <span class="na">viewBox=</span><span class="s">"0 0 960 360"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;g</span> <span class="na">ng-repeat=</span><span class="s">"planet in planets"</span> <span class="na">ng-attr-transform=</span><span class="s">"translate({{planet.x}},180)"</span><span class="nt">&gt;</span>
     <span class="nt">&lt;circle</span> <span class="na">ng-attr-r=</span><span class="s">"{{planet.radius*10}}"</span> <span class="na">ng-attr-fill=</span><span class="s">"{{planet.color}}"</span><span class="nt">&gt;&lt;/circle&gt;</span>
     <span class="nt">&lt;text</span> <span class="na">ng-attr-transform=</span><span class="s">"translate(0,{{planet.radius*10+5}})"</span><span class="nt">&gt;</span>{{planet.name}}<span class="nt">&lt;/text&gt;</span>
   <span class="nt">&lt;/g&gt;</span>
@@ -76,9 +75,58 @@
 </code></pre>
 </div>
 
-<p>A live sample can be found <a href="/samples/angular-svg/1-basic.html">here</a>.</p>
+<p><code class="highlighter-rouge">ng-repeat</code> allows to to iterate through an array. In this case it repeats the same SVG elements for each of the eight planets. <code class="highlighter-rouge">ng-attr-*</code> simply provides an access to control the attributes on an SVG element. For example, where you usually specify <code class="highlighter-rouge">transform="translate(...)"</code> now becomes <code class="highlighter-rouge">ng-attr-transform(...)</code>. This makes it possible for us to use variables in SVG elements. Note that in <code class="highlighter-rouge">ng-attr-*</code>, the code should be wrapped in double curly braces <code class="highlighter-rouge"><span class="p">{</span><span class="err">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">}</span><span class="err">}</span></code> so it would not be taken as a text string (but you don’t do this in <code class="highlighter-rouge">ng-repeat</code>).</p>
+
+<p>A live sample can be found <a href="/samples/angular-svg/1-basic.html" target="_blank">here</a>.</p>
 
 <h2 id="mark-selection-with-ng-click">Mark selection with <strong>ng-click</strong></h2>
+
+<p>The goal of this step is to let the user select a planet by clicking on it, and highlight the selection until another planet is selected. We’ll follow a common practice: specifying the highlight style in a CSS class called <code class="highlighter-rouge">selected</code>, and toggle the class when a planet is clicked. In CSS we first add:</p>
+
+<div class="language-css highlighter-rouge"><pre class="highlight"><code><span class="nc">.selected</span> <span class="o">&gt;</span> <span class="nt">circle</span> <span class="p">{</span>
+  <span class="py">stroke</span><span class="p">:</span> <span class="no">springgreen</span><span class="p">;</span>
+  <span class="py">stroke-width</span><span class="p">:</span> <span class="m">3px</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="nc">.selected</span> <span class="o">&gt;</span> <span class="nt">text</span> <span class="p">{</span>
+  <span class="py">fill</span><span class="p">:</span> <span class="no">springgreen</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>Note that the shape and the text of a planet are wrapped in a <code class="highlighter-rouge">&lt;g&gt;</code> element. Thus, we simply toggle the <code class="highlighter-rouge">selected</code> class on the <code class="highlighter-rouge">&lt;g&gt;</code> element, while provide highlight styles for its children.</p>
+
+<p>The next step is to add/remove the <code class="highlighter-rouge">selected</code> class when a planet is selected/unselected. To accomplish it, we first add a new variable <code class="highlighter-rouge">selectedPlanet</code> in the controller’s scope and set it to <code class="highlighter-rouge">null</code>. A planet’s value is assigned to this variable when selected.</p>
+
+<div class="language-javascript highlighter-rouge"><pre class="highlight"><code><span class="nx">angular</span><span class="p">.</span><span class="nx">module</span><span class="p">(</span><span class="s2">"app"</span><span class="p">,</span> <span class="p">[]).</span><span class="nx">controller</span><span class="p">(</span><span class="s2">"ctrl"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">$scope</span><span class="p">){</span>
+  <span class="nx">$scope</span><span class="p">.</span><span class="nx">selectedPlanet</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+  <span class="p">...</span>
+<span class="p">});</span>
+</code></pre>
+</div>
+
+<p>With <code class="highlighter-rouge">ng-class</code>, the <code class="highlighter-rouge">selected</code> class can be easily turned on/off according to a planet’s equality to <code class="highlighter-rouge">selectedPlanet</code>. And in <code class="highlighter-rouge">ng-click</code>, we simply specify what should happen when a planet is clicked: the planet is set as the <code class="highlighter-rouge">selectedPlanet</code>.</p>
+
+<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="nt">&lt;g</span> <span class="na">ng-repeat=</span><span class="s">"planet in planets"</span>
+   <span class="na">ng-attr-transform=</span><span class="s">"translate({{planet.x}},180)"</span>
+   <span class="na">ng-click=</span><span class="s">"$parent.selectedPlanet = planet"</span>
+   <span class="na">ng-class=</span><span class="s">"{ selected: selectedPlanet == planet }"</span><span class="nt">&gt;</span>
+  ...
+<span class="nt">&lt;/g&gt;</span>
+</code></pre>
+</div>
+
+<p>Note that in the <code class="highlighter-rouge">ng-click</code> directive, the scope is the scope of a planet, which is a child scope of <code class="highlighter-rouge">ctrl</code>. This is why we have to use <code class="highlighter-rouge">$parent.selectedPlanet = planet</code> to toggle the <code class="highlighter-rouge">selectedPlanet</code> variable in the controller’s scope.</p>
+
+<p>A live sample can be found <a href="/samples/angular-svg/2-select.html" target="_blank">here</a>. You can click on a planet to select it and see how it’s highlighted.</p>
+
+<h2 id="upcoming">Upcoming</h2>
+
+<p>In the next post, I will provide another two samples:</p>
+
+<ul>
+  <li>Show a custom tooltip on hover with <strong>ng-mouseenter</strong> and <strong>ng-mouseleave</strong>.</li>
+  <li>Make an element draggable with <strong>ng-mousedown</strong> and <strong>ng-mouseup</strong>.</li>
+</ul>
 
   </div>
 
@@ -100,10 +148,10 @@
             <div class="footer-col footer-col-2">
               <ul class="social-media-list">
                 <li>
-                  <a href="https://github.com/jeromecyang"><span class="icon icon--github"><svg viewBox="0 0 16 16" width="16px" height="16px"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg></span><span class="username">jeromecyang</span></a>
+                  <a href="https://github.com/jeromecyang"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><span class="username">jeromecyang</span></a>
                 </li>
                 <li>
-                  <a href="https://twitter.com/jeromyang"><span class="icon icon--twitter"><svg viewBox="0 0 16 16" width="16px" height="16px"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg></span><span class="username">jeromyang</span></a>
+                  <a href="https://twitter.com/jeromyang"><span class="icon"><i class="fa fa-twitter" aria-hidden="true"></i></span><span class="username">jeromyang</span></a>
                 </li>
               </ul>
             </div>
